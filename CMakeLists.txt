@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
 
-# CMake uyarılarını çözmek için proje adını tanımlıyoruz
 project(RetroEngine C CXX)
 
 set(OGG_DIR dependencies/android/libogg)
@@ -78,6 +77,15 @@ add_library(RetroEngine SHARED
     RSDKv5/RSDK/User/Core/UserPresence.cpp
     RSDKv5/RSDK/User/Core/UserStats.cpp
     RSDKv5/RSDK/User/Core/UserStorage.cpp
+    
+    # EKSİK OLAN VE DERLEYİCİNİN VTABLE BULAMAMASINA NEDEN OLAN KISIM
+    RSDKv5/RSDK/User/Dummy/DummyAchievements.cpp
+    RSDKv5/RSDK/User/Dummy/DummyCore.cpp
+    RSDKv5/RSDK/User/Dummy/DummyLeaderboards.cpp
+    RSDKv5/RSDK/User/Dummy/DummyPresence.cpp
+    RSDKv5/RSDK/User/Dummy/DummyStats.cpp
+    RSDKv5/RSDK/User/Dummy/DummyStorage.cpp
+    
     dependencies/all/tinyxml2/tinyxml2.cpp
     dependencies/all/iniparser/iniparser.cpp
     dependencies/all/iniparser/dictionary.cpp
@@ -114,10 +122,7 @@ target_link_libraries(
     z
     jnigraphics
     games-controller::paddleboat_static
-    
-    # HATA ÇIKARTAN KISIM ESKİ STABİL ADINA GERİ DÖNDÜRÜLDÜ
-    game-activity::game-activity 
-    
+    game-activity::game-activity
     oboe::oboe
     OpenSLES
 )
