@@ -1,10 +1,11 @@
-# THIS CMAKE SHOULD BE USED FOR ANDROID ONLY
-# might make this all plats later but not needed for now, the Makefile works fine
-
 cmake_minimum_required(VERSION 3.7)
+
+# 1. HATA UYARISINI ÇÖZMEK İÇİN PROJECT EKLEDİK
+project(RetroEngine C CXX)
 
 set(OGG_DIR dependencies/android/libogg)
 set(THEORA_DIR dependencies/android/libtheora)
+
 add_library(
     libogg
     STATIC
@@ -113,7 +114,7 @@ target_link_libraries(
     z
     jnigraphics
     games-controller::paddleboat_static
-    game-activity::game-activity
+    game-activity::game-activity_static  # STATİK OLARAK BELİRTTİK
     oboe::oboe
     OpenSLES
 )
