@@ -1,7 +1,7 @@
 #include "RSDK/Core/RetroEngine.hpp"
 
 #if RETRO_REV0U
-#include "Legacy/UserStorageLegacy.cpp"
+// #include "Legacy/UserStorageLegacy.cpp"
 #endif
 
 using namespace RSDK;
