@@ -1,12 +1,9 @@
 package com.decomp.rsdkv5;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,10 +12,6 @@ import android.view.WindowManager;
 import android.widget.RelativeLayout;
 import com.google.androidgamesdk.GameActivity;
 
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.PackageManagerCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -122,19 +115,11 @@ public class RSDKv5 extends GameActivity {
     }
     public static native void nativeOnTouch(int fingerID, int action, float x, float y);
 
+    // KÖKTEN DEĞİŞEN KISIM: Eski tehlikeli izinler silindi, yasal uygulama dizinine yönlendirildi
     public String getBasePath() {
         Context c = getApplicationContext();
-        if (ContextCompat.checkSelfPermission(c, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
-        }
-        String p = Environment.getExternalStorageDirectory().getAbsolutePath() + "/RSDK/v5";
-        //getExternalStorageDirectory is deprecated. I do not care.
-        //rmg 20220610 i'm a changed woman EDIT: nvm not yet
-        new File(p).mkdirs();
-        try {
-            new File(p + "../.nomedia").createNewFile();
-        }
-        catch (Exception e) {};
+        File filesDir = c.getExternalFilesDir(null);
+        String p = filesDir != null ? filesDir.getAbsolutePath() : c.getFilesDir().getAbsolutePath();
         return p + "/";
     }
 }
