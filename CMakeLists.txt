@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
-# 1. HATA UYARISINI ÇÖZMEK İÇİN PROJECT EKLEDİK
+# CMake uyarılarını çözmek için proje adını tanımlıyoruz
 project(RetroEngine C CXX)
 
 set(OGG_DIR dependencies/android/libogg)
@@ -114,7 +114,10 @@ target_link_libraries(
     z
     jnigraphics
     games-controller::paddleboat_static
-    game-activity::game-activity_static  # STATİK OLARAK BELİRTTİK
+    
+    # HATA ÇIKARTAN KISIM ESKİ STABİL ADINA GERİ DÖNDÜRÜLDÜ
+    game-activity::game-activity 
+    
     oboe::oboe
     OpenSLES
 )
