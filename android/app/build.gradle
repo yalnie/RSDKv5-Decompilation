@@ -34,7 +34,7 @@ android {
         }
         externalNativeBuild {
             cmake {
-                // SENİN O ÇALIŞAN FIXIN
+                // Senin çalışan fixin yerinde duruyor
                 path '../../CMakeLists.txt'
             }
         }
@@ -43,14 +43,12 @@ android {
         abortOnError false
     }
 
-    // ESKİ GRADLE/GROOVY SÖZDİZİMİNE UYGUN ÇAKIŞMA ÇÖZÜCÜ
+    // ESKİ VE İNATÇI GRADLE SÜRÜMLERİNİN KESİN KABUL ETTİĞİ TEK YAZIM FORMATI
     packagingOptions {
-        pickFirsts = [
-            'lib/arm64-v8a/libc++_shared.so',
-            'lib/armeabi-v7a/libc++_shared.so',
-            'lib/x86/libc++_shared.so',
-            'lib/x86_64/libc++_shared.so'
-        ]
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
     }
 }
 
