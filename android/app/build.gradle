@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     ndkVersion "24.0.8215888"
-    compileSdkVersion 32
+    compileSdkVersion 33
     buildFeatures {
         prefab true
     }
     defaultConfig {
         applicationId "com.decomp.rsdkv5"
         minSdkVersion 17
-        targetSdkVersion 29
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
         externalNativeBuild {
@@ -42,7 +42,6 @@ android {
         abortOnError false
     }
 
-    // HİÇBİR SÜSLÜ PARANTEZ VEYA KLAS/TİP İÇERMEYEN, %100 ÇALIŞAN ESKİ YÖNTEM
     packagingOptions.pickFirst 'lib/arm64-v8a/libc++_shared.so'
     packagingOptions.pickFirst 'lib/armeabi-v7a/libc++_shared.so'
     packagingOptions.pickFirst 'lib/x86/libc++_shared.so'
