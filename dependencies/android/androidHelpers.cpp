@@ -222,7 +222,7 @@ void AndroidCommandCallback(android_app *app, int32 cmd)
 
 bool AndroidKeyDownCallback(GameActivity *activity, const GameActivityKeyEvent *event)
 {
-    if (Paddleboat_processGameActivityKeyInputEvent(event, sizeof(GameActivityKeyEvent)))
+    if (Paddleboat_processGameActivityKeyInputEvent(const_cast<GameActivityKeyEvent*>(event), sizeof(GameActivityKeyEvent)))
         return true;
     int32 keycode = event->keyCode;
 
@@ -367,7 +367,7 @@ bool AndroidKeyDownCallback(GameActivity *activity, const GameActivityKeyEvent *
 
 bool AndroidKeyUpCallback(GameActivity *activity, const GameActivityKeyEvent *event)
 {
-    if (Paddleboat_processGameActivityKeyInputEvent(event, sizeof(GameActivityKeyEvent)))
+    if (Paddleboat_processGameActivityKeyInputEvent(const_cast<GameActivityKeyEvent*>(event), sizeof(GameActivityKeyEvent)))
         return true;
 
     int32 keycode = event->keyCode;
