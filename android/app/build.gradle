@@ -34,7 +34,7 @@ android {
         }
         externalNativeBuild {
             cmake {
-                // Senin o meşhur fixin sapasağlam yerinde
+                // Senin çalışan fixin yerinde duruyor
                 path '../../CMakeLists.txt'
             }
         }
@@ -43,13 +43,13 @@ android {
         abortOnError false
     }
 
-    // ESKİ GRADLE SÜRÜMÜNÜN KESİN KABUL ETTİĞİ PARANTEZLİ SÖZDİZİMİ
-    packagingOptions {
-        pickFirst('lib/arm64-v8a/libc++_shared.so')
-        pickFirst('lib/armeabi-v7a/libc++_shared.so')
-        pickFirst('lib/x86/libc++_shared.so')
-        pickFirst('lib/x86_64/libc++_shared.so')
-    }
+    // PROBLEMLİ BLOĞU SİLİP EN KÖKLÜ VE ESKİ GRADLE SÜRÜMLERİNDE BİLE ÇALIŞAN DOĞRUDAN ATAMA FORMATINA GEÇTİK
+    packagingOptions.pickFirsts = [
+        'lib/arm64-v8a/libc++_shared.so',
+        'lib/armeabi-v7a/libc++_shared.so',
+        'lib/x86/libc++_shared.so',
+        'lib/x86_64/libc++_shared.so'
+    ] as Set
 }
 
 dependencies {
