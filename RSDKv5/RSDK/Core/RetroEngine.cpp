@@ -53,7 +53,7 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
 #if RETRO_REV0U
         engine.version = 0;
 #endif
-        InitModAPI(); // setup mods & the mod API table
+        InitModAPI();
 #if RETRO_REV0U
         engine.version = 5;
 #endif
@@ -63,17 +63,15 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
         DetectEngineVersion();
 #endif
 
-        // By Default we use the dummy system so this'll never be false
-        // its used in cases like steam where it gives the "Steam must be running to play this game" message and closes
 #if RETRO_REV02
         if (!SKU::userCore->CheckAPIInitialized()) {
-#else
-        if (false) { // it's more hardcoded in rev01, so lets pretend it's here
-#endif
-            // popup a message box saying the API failed to validate or something
-            // on steam this is the "steam must be running to play this game" message
             return 0;
         }
+#else
+        if (false) {
+            return 0;
+        }
+#endif
 
         InitEngine();
 
@@ -81,12 +79,10 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
             RenderDevice::isRunning = true;
 
 #if RETRO_USE_MOD_LOADER
-            // we confirmed the game actually is valid & running, lets start some callbacks
             RunModCallbacks(MODCB_ONGAMESTARTUP, NULL);
 #endif
         }
         else {
-            // No render device, throw a "QUIT" msg onto the message loop and call it a day :)
 #if RETRO_RENDERDEVICE_DIRECTX9 || RETRO_RENDERDEVICE_DIRECTX11
             PostQuitMessage(0);
 #endif
@@ -95,14 +91,22 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
 
     RenderDevice::InitFPSCap();
 
+    // 60 FPS sabitleme mantığı için zamanlayıcı değişkenleri
+    double targetFrameTime = 1.0 / 60.0;
+    double lastTargetTime = RenderDevice::GetTargetTime(); 
+
     while (RenderDevice::isRunning) {
         RenderDevice::isRunning = RenderDevice::ProcessEvents();
 
         if (!RenderDevice::isRunning)
             break;
 
-        if (RenderDevice::CheckFPSCap()) {
-            RenderDevice::UpdateFPSCap();
+        double currentTime = RenderDevice::GetTargetTime();
+        if (currentTime - lastTargetTime >= targetFrameTime) {
+            lastTargetTime += targetFrameTime;
+            if (currentTime - lastTargetTime > targetFrameTime) {
+                lastTargetTime = currentTime;
+            }
 
             AudioDevice::FrameInit();
 
@@ -112,13 +116,7 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
             if (SKU::userCore->CheckEnginePause())
                 continue;
 
-                // Focus Checks
-#if !RETRO_USE_ORIGINAL_CODE
-            if (customSettings.disableFocusPause)
-                engine.focusState = 0;
-            else
-#endif
-                if (SKU::userCore->CheckFocusLost()) {
+            if (SKU::userCore->CheckFocusLost()) {
                 if (!(engine.focusState & 1)) {
                     engine.focusState = 1;
                     PauseSound();
@@ -136,7 +134,6 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
             }
             else {
                 if (!engine.hardPause) {
-                    // common stuff
                     foreachStackPtr = foreachStackList;
 #if !RETRO_USE_ORIGINAL_CODE
                     debugHitboxCount = 0;
@@ -171,7 +168,6 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
                         int32 preGameMode  = RSDK::Legacy::gameMode;
                         int32 preStageMode = RSDK::Legacy::stageMode;
 
-                        // Clear some stuff
                         sceneInfo.listData     = NULL;
                         sceneInfo.listCategory = NULL;
 
@@ -222,7 +218,6 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
                     }
 #endif
 
-                    // update device states and other stuff
                     ProcessInputDevices();
 
                     if (engine.devMenu)
@@ -263,16 +258,6 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
                 }
 #endif
                 if (engine.inFocus == 1) {
-                    // Uncomment this code to add the build number to dev menu
-                    // overrides the game subtitle, used in switch dev menu
-                    if (currentScreen && sceneInfo.state == ENGINESTATE_DEVMENU) {
-                        // Switch 1.00 build # is 17051, 1.04 is 18403
-                        // char buffer[0x40];
-                        // sprintf(buffer, "Build #%d", 18403);
-                        // DrawRectangle(currentScreen->center.x - 128, currentScreen->center.y - 48, 256, 8, 0x008000, 0xFF, INK_NONE, true);
-                        // DrawDevString(buffer, currentScreen->center.x, currentScreen->center.y - 48, 1, 0xF0F0F0);
-                    }
-
                     RenderDevice::CopyFrameBuffer();
                 }
             }
@@ -283,8 +268,6 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
             RenderDevice::FlipScreen();
         }
     }
-
-    // Shutdown
 
     AudioDevice::Release();
     RenderDevice::Release(false);
@@ -330,7 +313,6 @@ void RSDK::ProcessEngine()
                     AddViewableVariable(drawGroupNames[v], &engine.drawGroupVisible[v], VIEWVAR_BOOL, false, true);
 #endif
 
-                // dim after 5 mins
                 videoSettings.dimLimit = (5 * 60) * videoSettings.refreshRate;
                 ProcessInput();
                 ProcessObjects();
@@ -404,9 +386,9 @@ void RSDK::ProcessEngine()
             InitObjects();
 
 #if RETRO_REV02
-            SKU::userCore->StageLoad();
-            for (int32 v = 0; v < DRAWGROUP_COUNT; ++v)
-                AddViewableVariable(drawGroupNames[v], &engine.drawGroupVisible[v], VIEWVAR_BOOL, false, true);
+                SKU::userCore->StageLoad();
+                for (int32 v = 0; v < DRAWGROUP_COUNT; ++v)
+                    AddViewableVariable(drawGroupNames[v], &engine.drawGroupVisible[v], VIEWVAR_BOOL, false, true);
 #endif
 
             ProcessInput();
@@ -485,7 +467,7 @@ void RSDK::ProcessEngine()
                     }
                 }
                 else {
-                    engine.displayTime -= (1.0 / 60.0); // deltaTime frame-step;
+                    engine.displayTime -= (1.0 / 60.0);
 #if RETRO_USE_MOD_LOADER
                     RunModCallbacks(MODCB_ONVIDEOSKIPCB, (void *)engine.skipCallback);
 #endif
@@ -1034,7 +1016,6 @@ void RSDK::LoadGameConfig()
 #endif
             GEN_HASH_MD5(scene->name, scene->hash);
 
-            // Override existing values
             sceneInfo.activeCategory = 0;
             startScene               = totalSceneCount;
             currentSceneFolder[0]    = 0;
@@ -1087,14 +1068,12 @@ void RSDK::LoadGameConfig()
         uint8 varCount = ReadInt8(&info);
         for (int32 i = 0; i < varCount; ++i) {
 #if RETRO_REV0U
-            // v5U Ditches this in favour of the InitVarsCB method
             ReadInt32(&info, false);
             int32 count = ReadInt32(&info, false);
             for (int32 v = 0; v < count; ++v) ReadInt32(&info, false);
 #else
             if (!globalVarsPtr)
                 break;
-            // standard v5 loads variables directly into the struct
             int32 offset = ReadInt32(&info, false);
             int32 count  = ReadInt32(&info, false);
             for (int32 v = 0; v < count; ++v) {
@@ -1143,7 +1122,7 @@ void RSDK::InitGameLink()
                    DefaultObject_EditorDraw, DefaultObject_EditorLoad, DefaultObject_Serialize);
 #if RETRO_REV02
     RegisterObject((Object **)&DevOutput, ":DevOutput:", sizeof(EntityDevOutput), sizeof(ObjectDevOutput), DevOutput_Update, DevOutput_LateUpdate,
-                   DevOutput_StaticUpdate, DevOutput_Draw, DevOutput_Create, DevOutput_StageLoad, DevOutput_EditorDraw, DevOutput_EditorLoad,
+                   StaticUpdate, DevOutput_Draw, DevOutput_Create, DevOutput_StageLoad, DevOutput_EditorDraw, DevOutput_EditorLoad,
                    DevOutput_Serialize);
 #endif
 #endif

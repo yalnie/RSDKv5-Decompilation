@@ -16,6 +16,12 @@ bool32 RSDK::useDataPack = false;
 FileIO *fOpen(const char *path, const char *mode)
 {
     char buffer[0x200];
+    
+    if (strstr(path, "Data.rsdk") != NULL) {
+        sprintf_s(buffer, (int32)sizeof(buffer), "Data.rsdk");
+        return fopen(buffer, mode);
+    }
+
     int32 a = 0;
     if (!strncmp(path, SKU::userFileDir, strlen(SKU::userFileDir)))
         a = strlen(SKU::userFileDir);
@@ -30,13 +36,11 @@ void RSDK::DetectEngineVersion()
 {
     bool32 readDataPack = useDataPack;
 #if RETRO_USE_MOD_LOADER
-    // mods can manually set their target engine versions if needed
     if (modSettings.versionOverride) {
         engine.version = modSettings.versionOverride;
         return;
     }
 
-    // check if we have any mods with gameconfigs
     int32 m = 0;
     for (; m < ActiveMods().size(); ++m) {
         SetActiveMod(m);
@@ -46,12 +50,12 @@ void RSDK::DetectEngineVersion()
         if (LoadFile(&checkInfo, "Data/Game/GameConfig.bin", FMODE_RB)) {
             readDataPack = false;
             CloseFile(&checkInfo);
-            m = 0; // found one, just sets this to 0 again
+            m = 0;
             break;
         }
     }
 
-    if (m) // didn't find a gameconfig
+    if (m)
         SetActiveMod(-1);
 #endif
 
@@ -64,22 +68,18 @@ void RSDK::DetectEngineVersion()
 #endif
             uint32 sig = ReadInt32(&info, false);
 
-            // GameConfig has "CFG" signature, its RSDKv5 formatted
             if (sig == RSDK_SIGNATURE_CFG) {
                 engine.version = 5;
             }
             else {
-                // else, assume its RSDKv4 for now
                 engine.version = 4;
 
-                // Go back to the start of the file to check v3's "Data" string, that way we can tell if its v3 or v4
                 Seek_Set(&info, 0);
 
                 uint8 length = ReadInt8(&info);
                 char buffer[0x40];
                 ReadBytes(&info, buffer, length);
 
-                // the "Data" thing is actually a string, but lets treat it as a "signature" for simplicity's sake shall we?
                 length     = ReadInt8(&info);
                 uint32 sig = ReadInt32(&info, false);
                 if (sig == RSDK_SIGNATURE_DATA && length == 4)
@@ -94,7 +94,7 @@ void RSDK::DetectEngineVersion()
         if (LoadFile(&info, dataPacks[dataPackCount - 1].name, FMODE_RB)) {
             uint32 sig = ReadInt32(&info, false);
             if (sig == RSDK_SIGNATURE_RSDK) {
-                ReadInt8(&info); // 'v'
+                ReadInt8(&info);
                 uint8 version = ReadInt8(&info);
 
                 switch (version) {
@@ -105,7 +105,6 @@ void RSDK::DetectEngineVersion()
                 }
             }
             else {
-                // v3 has no 'RSDK' signature
                 engine.version = 3;
             }
 
@@ -122,7 +121,16 @@ bool32 RSDK::LoadDataPack(const char *filePath, size_t fileOffset, bool32 useBuf
     FileInfo info;
 
     char dataPackPath[0x100];
+#if RETRO_PLATFORM == RETRO_ANDROID
+    if (strstr(filePath, "Data.rsdk") != NULL) {
+        sprintf_s(dataPackPath, (int32)sizeof(dataPackPath), "Data.rsdk");
+    }
+    else {
+        sprintf_s(dataPackPath, (int32)sizeof(dataPackPath), "%s%s", SKU::userFileDir, filePath);
+    }
+#else
     sprintf_s(dataPackPath, (int32)sizeof(dataPackPath), "%s%s", SKU::userFileDir, filePath);
+#endif
 
     InitFileInfo(&info);
     info.externalFile = true;
@@ -133,8 +141,8 @@ bool32 RSDK::LoadDataPack(const char *filePath, size_t fileOffset, bool32 useBuf
 
         useDataPack = true;
 
-        ReadInt8(&info); // 'v'
-        ReadInt8(&info); // version
+        ReadInt8(&info);
+        ReadInt8(&info);
 
         strcpy(dataPacks[dataPackCount].name, dataPackPath);
 
@@ -207,7 +215,6 @@ bool32 RSDK::OpenDataFile(FileInfo *info, const char *filename)
             fSeek(info->file, file->offset, SEEK_SET);
         }
         else {
-            // a bit of a hack, but it is how it is in the original
             info->file = (FileIO *)&dataPacks[file->packID].fileBuffer[file->offset];
 
             uint8 *fileBuffer = (uint8 *)info->file;
@@ -277,11 +284,10 @@ bool32 RSDK::LoadFile(FileInfo *info, const char *filename, uint8 fileMode)
 #if RETRO_REV0U
     if (modSettings.forceScripts && !info->externalFile) {
         if (std::string(fullFilePath).rfind("Data/Scripts/", 0) == 0 && ends_with(std::string(fullFilePath), "txt")) {
-            // is a script, since those dont exist normally, load them from "scripts/"
             info->externalFile = true;
             addPath            = true;
             std::string fStr   = std::string(fullFilePath);
-            fStr.erase(fStr.begin(), fStr.begin() + 5); // remove "Data/"
+            fStr.erase(fStr.begin(), fStr.begin() + 5);
             StrCopy(fullFilePath, fStr.c_str());
         }
     }
@@ -329,7 +335,6 @@ void RSDK::GenerateELoadKeys(FileInfo *info, const char *key1, int32 key2)
 {
     uint8 hash[0x10];
 
-    // StringA
     StringUpperCase(textBuffer, key1);
     GEN_HASH_MD5(textBuffer, (uint32 *)hash);
 
@@ -340,7 +345,6 @@ void RSDK::GenerateELoadKeys(FileInfo *info, const char *key1, int32 key2)
         info->encryptionKeyA[y + 0] = hash[y + 3];
     }
 
-    // StringB
     sprintf_s(textBuffer, (int32)sizeof(textBuffer), "%d", key2);
     GEN_HASH_MD5(textBuffer, (uint32 *)hash);
 
@@ -398,6 +402,7 @@ void RSDK::DecryptBytes(FileInfo *info, void *buffer, size_t size)
         }
     }
 }
+
 void RSDK::SkipBytes(FileInfo *info, int32 size)
 {
     if (size) {

@@ -9,7 +9,6 @@ android {
     defaultConfig {
         applicationId "com.decomp.rsdkv5"
         minSdkVersion 17
-        //minSdkVersion 30 // if you're getting framerate issues, uncomment this
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -35,21 +34,31 @@ android {
         }
         externalNativeBuild {
             cmake {
+                // SENİN O ÇALIŞAN FIXIN
                 path '../../CMakeLists.txt'
             }
         }
-       
     }
     lintOptions {
         abortOnError false
     }
+
+    // ESKİ GRADLE/GROOVY SÖZDİZİMİNE UYGUN ÇAKIŞMA ÇÖZÜCÜ
+    packagingOptions {
+        pickFirsts = [
+            'lib/arm64-v8a/libc++_shared.so',
+            'lib/armeabi-v7a/libc++_shared.so',
+            'lib/x86/libc++_shared.so',
+            'lib/x86_64/libc++_shared.so'
+        ]
+    }
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'androidx.core:core:1.8.0'
-    implementation 'androidx.appcompat:appcompat:1.4.2'
-    implementation "androidx.games:games-activity:1.1.0-beta03"
-    implementation "androidx.games:games-controller:1.1.0-beta01"
-    implementation 'com.google.oboe:oboe:1.5.0'
+    implementation 'androidx.games:games-activity:2.0.2'
+    implementation 'androidx.games:games-controller:2.0.1'
+    implementation 'com.google.oboe:oboe:1.8.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 }

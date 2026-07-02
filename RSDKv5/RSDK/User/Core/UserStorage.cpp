@@ -1,47 +1,14 @@
 #include "RSDK/Core/RetroEngine.hpp"
 
-#if RETRO_REV02
-
-// ====================
-// API Cores
-// ====================
-
-namespace RSDK
-{
-namespace SKU
-{
-
-// Dummy API
-#if RETRO_USERCORE_DUMMY
-#include "RSDK/User/Dummy/DummyStorage.cpp"
+#if RETRO_REV0U
+#include "Legacy/UserStorageLegacy.cpp"
 #endif
-
-// Steam API
-#if RETRO_USERCORE_STEAM
-#include "RSDK/User/Steam/SteamStorage.cpp"
-#endif
-
-// Epic Games API
-#if RETRO_USERCORE_EOS
-#include "RSDK/User/EOS/EOSStorage.cpp"
-#endif
-
-// Switch API
-#if RETRO_USERCORE_NX
-#include "RSDK/User/NX/NXStorage.cpp"
-#endif
-
-} // namespace SKU
-} // namespace RSDK
 
 using namespace RSDK;
 
 RSDK::SKU::UserStorage *RSDK::SKU::userStorage     = NULL;
 RSDK::SKU::UserDBStorage *RSDK::SKU::userDBStorage = NULL;
 
-// =======================
-// USER DB VALUE
-// =======================
 bool32 RSDK::SKU::UserDBValue::CheckMatch(int32 row, int32 column)
 {
     UserDB *userDB     = (UserDB *)parent;
@@ -141,9 +108,6 @@ void RSDK::SKU::UserDBValue::Get(int32 type, void *data)
     }
 }
 
-// =======================
-// USER DB ROW
-// =======================
 bool32 RSDK::SKU::UserDBRow::AddValue(int32 type, char *name, void *value)
 {
     UserDB *userDB = parent;
@@ -297,9 +261,6 @@ bool32 RSDK::SKU::UserDBRow::Compare(UserDBRow *other, int32 type, char *name, b
     return false;
 }
 
-// =======================
-// USER DB
-// =======================
 void RSDK::SKU::UserDB::Init(va_list list)
 {
     int32 cnt = 0;
@@ -329,7 +290,7 @@ bool32 RSDK::SKU::UserDB::Load(uint8 *buffer)
         return false;
 
     buffer += sizeof(int32);
-    buffer += sizeof(int32); // used size
+    buffer += sizeof(int32);
 
     rowCount = *(uint16 *)buffer;
     buffer += sizeof(uint16);
@@ -380,7 +341,7 @@ void RSDK::SKU::UserDB::Save(int32 totalSize, uint8 *buffer)
 
     if (size + sizeof(uint32) < totalSize) {
         size += sizeof(uint32);
-        *(uint32 *)buffer = (int32)GetSize(); // used size
+        *(uint32 *)buffer = (int32)GetSize();
         buffer += sizeof(uint32);
     }
 
@@ -549,7 +510,6 @@ void RSDK::SKU::UserDB::AddSortFilter(const char *name, void *value)
     if (id >= 0) {
         if (sortedRowCount) {
             UserDBValue dbValue;
-            // this is very hacky
             dbValue.parent = (UserDBRow *)this;
             dbValue.Set(columnTypes[id], value);
             FilterValues(&dbValue, id);
@@ -585,7 +545,7 @@ void RSDK::SKU::UserDB::RefreshSortList()
 void RSDK::SKU::UserDB::SortRows(int32 type, char *name, bool32 sortAscending)
 {
     if (!rowsChanged && sortedRowCount) {
-        if (type || name) { // sort by value
+        if (type || name) {
             int32 col = GetColumnID(name);
             if (col >= 0) {
                 for (int32 i = 0; i < sortedRowList.Count(); i++) {
@@ -604,7 +564,7 @@ void RSDK::SKU::UserDB::SortRows(int32 type, char *name, bool32 sortAscending)
                 SetupRowSortIDs();
             }
         }
-        else { // sort by date
+        else {
             for (int32 i = 0; i < sortedRowList.Count(); i++) {
                 for (int32 j = i + 1; j < sortedRowList.Count(); j++) {
                     int32 *id1 = sortedRowList.At(i);
@@ -686,10 +646,6 @@ size_t RSDK::SKU::UserDB::GetSize()
     return size;
 }
 
-// =======================
-// USER DB STORAGE
-// =======================
-
 RSDK::SKU::UserDBStorage::UserDBStorage()
 {
     unknown = 0;
@@ -713,7 +669,6 @@ RSDK::SKU::UserDBStorage::UserDBStorage()
     this->saveCallback[7] = UserDBStorage_SaveCB8;
 }
 
-// UserDB Management
 uint16 RSDK::SKU::UserDBStorage::InitUserDB(const char *name, va_list list)
 {
     int32 tableID = -1;
@@ -847,11 +802,6 @@ bool32 RSDK::SKU::UserDBStorage::SaveCB(uint16 tableID, int32 status)
     return false;
 }
 
-// =======================
-// USER DB API
-// =======================
-
-// UserDB Row Sorting
 uint16 RSDK::SKU::SetupUserDBRowSorting(uint16 tableID)
 {
     if (tableID == (uint16)-1)
@@ -906,7 +856,6 @@ int32 RSDK::SKU::GetSortedUserDBRowID(uint16 tableID, uint16 sortedRowID)
     return userDB->sortedRowIDs[sortedRowID];
 }
 
-// UserDB Values
 bool32 RSDK::SKU::GetUserDBValue(uint16 tableID, uint32 rowID, int32 type, char *name, void *value)
 {
     if (tableID == (uint16)-1 || rowID == (uint16)-1 || !userDBStorage->userDB[tableID].active)
@@ -921,7 +870,6 @@ bool32 RSDK::SKU::SetUserDBValue(uint16 tableID, uint32 rowID, int32 type, char 
     return userDBStorage->userDB[tableID].rows[rowID].AddValue(type, name, value);
 }
 
-// UserDB Misc
 int32 RSDK::SKU::GetUserDBRowsChanged(uint16 tableID) { return userDBStorage->userDB[tableID].rowsChanged; }
 void RSDK::SKU::GetUserDBRowCreationTime(uint16 tableID, int32 rowID, char *buf, size_t size, char *format)
 {
@@ -931,10 +879,6 @@ void RSDK::SKU::GetUserDBRowCreationTime(uint16 tableID, int32 rowID, char *buf,
             strftime(buf, size, format, &userDB->rows[rowID].createTime);
     }
 }
-
-// =======================
-// USER DB CALLBACKS
-// =======================
 
 void RSDK::SKU::UserDBStorage_LoadCB1(int32 status)
 {
@@ -1017,8 +961,6 @@ void RSDK::SKU::UserDBStorage_SaveCB8(int32 status)
     if (userDBStorage->dbSaveCB[7])
         userDBStorage->dbSaveCB[7](7, status);
 }
-
-#endif
 
 void (*RSDK::SKU::preLoadSaveFileCB)();
 void (*RSDK::SKU::postLoadSaveFileCB)();
@@ -1150,22 +1092,14 @@ bool32 RSDK::SKU::TrySaveUserFile(const char *filename, void *buffer, uint32 siz
 void RSDK::SKU::InitUserDirectory()
 {
 #if RETRO_PLATFORM == RETRO_OSX
-
     char buffer[0x100];
     sprintf_s(buffer, (int32)sizeof(buffer), "%s/RSDKv5/", getResourcesPath());
     SKU::SetUserFileCallbacks(buffer, NULL, NULL);
-
 #elif RETRO_PLATFORM == RETRO_ANDROID
-
-    // done by javaside
-
+    // Handled by JNI to link Android/data/[package_name]/files
 #elif RETRO_PLATFORM == RETRO_LINUX
-
     SKU::SetUserFileCallbacks("./", NULL, NULL);
-
 #else
-
     SKU::SetUserFileCallbacks("", NULL, NULL);
-
 #endif
 }
